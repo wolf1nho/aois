@@ -1,6 +1,6 @@
-from src.integercalculator import (int_to_direct_binary, bin_to_str, int_to_reverse_binary, 
+from src.integercalculator import (int_to_direct_binary, int_to_reverse_binary, 
     int_to_additional_binary, binary_add, direct_binary_to_int,
-    binary_sub, binary_div, additional_binary_to_int, binary_comp, fixed_point_to_decimal
+    binary_sub, binary_div_with_fraction, additional_binary_to_int, binary_comp, fixed_point_to_decimal
     )
 from src.ieee7542008 import (
     from_float_to_ieee, from_ieee_to_float, add_ieee, sub_ieee,
@@ -11,6 +11,22 @@ from src.bcd5421 import (
     int_to_5421, add_5421_bcd, bcd_5421_to_int
 )
 
+def print_menu():
+    print("\n---- Меню ----")
+    print("1  - Перевод числа из десятичного формата в двоичный в прямом, дополнительном и обратном кодах")
+    print("2  - Сложение в дополнительном коде")
+    print("3  - Вычитание в дополнительном коде")
+    print("4  - Произведение в прямом коде")
+    print("5  - Деление в прямом коде")
+    print("6  - Сложение чисел с плавающей точкой по стандарту IEEE-754-2008")
+    print("7  - Вычитание чисел с плавающей точкой по стандарту IEEE-754-2008")
+    print("8  - Произведение чисел с плавающей точкой по стандарту IEEE-754-2008")
+    print("9  - Деление чисел с плавающей точкой по стандарту IEEE-754-2008")
+    print("10 - Сложение чисел в двоично-десятичный коде (5421 BCD):")
+    print("0  - Выход")
+
+def bin_to_str(bits):
+    return "".join(str(bit) for bit in bits)
 
 def main():
     while True:
@@ -19,13 +35,17 @@ def main():
             match user_choice:
                 case "1":
                     a = int(input("Введите число: "))
-                    print(f"Прямой код{bin_to_str(int_to_direct_binary(a))}")
-                    print(f"Обратный код{bin_to_str(int_to_reverse_binary(a))}")
-                    print(f"Дополнительный код{bin_to_str(int_to_additional_binary(a))}")
+                    print(f"Прямой код: {bin_to_str(int_to_direct_binary(a))}")
+                    print(f"Обратный код: {bin_to_str(int_to_reverse_binary(a))}")
+                    print(f"Дополнительный код: {bin_to_str(int_to_additional_binary(a))}")
                 case "2":
                     a = int(input("a = "))
                     b = int(input("b = "))
-                    diff = binary_add(int_to_additional_binary(a), int_to_additional_binary(b))
+                    a_bin = int_to_additional_binary(a)
+                    b_bin = int_to_additional_binary(b)
+                    print(f"a = {bin_to_str(a_bin)} (доп. код)")
+                    print(f"b = {bin_to_str(b_bin)} (доп. код)")
+                    diff = binary_add(a_bin, b_bin)
                     print(f"a + b = {bin_to_str(diff)} (bin)")
                     print(f"a + b = {additional_binary_to_int(diff)} (dec)")
                 case "3":
@@ -46,7 +66,7 @@ def main():
                     if b == 0:
                         print("Деление на ноль невозможно!!!")
                         continue
-                    div = binary_div(int_to_direct_binary(a), int_to_direct_binary(b))
+                    div = binary_div_with_fraction(int_to_direct_binary(a), int_to_direct_binary(b))
                     print(f"a / b = {bin_to_str(div)} (bin)")
                     print(f"a / b = {fixed_point_to_decimal(div)} (dec)")
                 case "6":
@@ -56,9 +76,9 @@ def main():
                     print(f"{bin_to_str(a_ieee)} (IEEE-754-2008)")
                     b_ieee = from_float_to_ieee(b)
                     print(f"{bin_to_str(b_ieee)} (IEEE-754-2008)")
-                    diff = add_ieee(a_ieee, b_ieee)
-                    print(f"a + b = {bin_to_str(diff)} (IEEE-754-2008)")
-                    print(f"a + b = {from_ieee_to_float(diff)} (dec)")
+                    sum = add_ieee(a_ieee, b_ieee)
+                    print(f"a + b = {bin_to_str(sum)} (IEEE-754-2008)")
+                    print(f"a + b = {from_ieee_to_float(sum)} (dec)")
                 case "7":
                     a = float(input("a = "))
                     b = float(input("b = "))
@@ -107,19 +127,16 @@ def main():
                 case _:
                     print("Неверный выбор.")
 
-def print_menu():
-    print("\n--- Меню ---")
-    print("1  - Перевод числа из десятичного формата в двоичный в прямом, дополнительном и обратном кодах")
-    print("2  - Сложение в дополнительном коде")
-    print("3  - Вычитание в дополнительном коде")
-    print("4  - Произведение в прямом коде")
-    print("5  - Деление в прямом коде")
-    print("6  - Сложение чисел с плавающей точкой по стандарту IEEE-754-2008")
-    print("7  - Вычитание чисел с плавающей точкой по стандарту IEEE-754-2008")
-    print("8  - Произведение чисел с плавающей точкой по стандарту IEEE-754-2008")
-    print("9  - Деление чисел с плавающей точкой по стандарту IEEE-754-2008")
-    print("10 - Сложение чисел в двоично-десятичный коде (5421 BCD):")
-    print("0 - Выход")
-
 if __name__ == "__main__":
     main()
+    # a = 80
+    # b = 2
+    # if b == 0:
+    #     print("Деление на ноль невозможно!!!")
+    # a_bin = int_to_direct_binary(a)
+    # print(bin_to_str(a_bin))
+    # b_bin = int_to_direct_binary(b)
+    # print(bin_to_str(b_bin))
+    # div = binary_div_with_fraction(a_bin, b_bin)
+    # print(f"a / b = {bin_to_str(div)} (bin)")
+    # print(f"a / b = {fixed_point_to_decimal(div)} (dec)")

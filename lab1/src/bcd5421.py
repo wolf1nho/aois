@@ -3,8 +3,8 @@ from constants import (
 )
 
 def int_to_5421(a):
-    if a < 0 or a > 10 ** (SIZE / 4):
-        raise ValueError("")
+    if a < 0 or a >= 10 ** (SIZE / 4):
+        raise ValueError()
 
     a_str = str(a).zfill(SIZE // 4)
 
@@ -22,7 +22,7 @@ def from_binary_to_int(bits):
 def add_binary4(bin1, bin2, carry = 0):
     result = []
 
-    for i in range(3,-1, -1):
+    for i in range(3, -1, -1):
         val1 = bin1[i]
         val2 = bin2[i]
 
@@ -52,16 +52,22 @@ def num_to_5421(a):
     
 def add_5421_bcd(bits1, bits2):
     carry = 0
-    result = [0]*32
+    correction = 0
+    result = [0]*SIZE
     for i in range(7, -1, -1):
         b1 = bits1[i*4:(i+1)*4]
         b2 = bits2[i*4:(i+1)*4]
 
         sum, carry = add_binary4(b1, b2, carry)
+        
         sum_dec = from_binary_to_int(sum) 
         if(4 < sum_dec < 8 or sum_dec > 12):
-            sum, _ = add_binary4(sum, [0, 0, 1, 1])
+            sum, correction = add_binary4(sum, [0, 0, 1, 1])
+        if correction:
+            carry = 1
+            correction = 0
         result = [0]*(i)*4 + sum + result[(i+1)*4:]
+    
     return result
 
 def bcd_5421_to_num(bits):

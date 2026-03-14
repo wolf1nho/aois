@@ -1,32 +1,32 @@
-from constants import SIZE, MANTISSA_SIZE, EXPONENT_SIZE
+from constants import SIZE, MANTISSA_SIZE, EXPONENT_SIZE, BIAS
 
 def from_float_to_ieee(num):
     if num == 0.0:
         return [0] * SIZE
 
-    sign = 1 if num<0 else 0
+    sign = 1 if num < 0 else 0
     int_part = int(num)
     frac_part = num - int(num)
 
-    int_bits = get_integer_bits(abs(int_part))
-    frac_bits = get_fractional_bits(abs(frac_part))
+    int_bits = get_integer_part_bits(abs(int_part))
+    frac_bits = get_fractional_part_bits(abs(frac_part))
 
     e, m = normalize(int_bits, frac_bits)
     
-    e = get_integer_bits(e + 127)
+    e = get_integer_part_bits(e + BIAS)
     if len(e) < EXPONENT_SIZE:
-        e = [0]*(EXPONENT_SIZE-len(e)) + e
+        e = [0]*(EXPONENT_SIZE - len(e)) + e
 
     return [sign] + e + m
 
-def get_integer_bits(int_part):
+def get_integer_part_bits(int_part):
     bits = []
     while int_part > 0:
         bits.append(int_part % 2)
         int_part = int_part // 2
     return bits[::-1]
 
-def get_fractional_bits(frac_part):
+def get_fractional_part_bits(frac_part):
     bits = []
     for _ in range(SIZE):
         if frac_part == 0:
@@ -42,7 +42,10 @@ def normalize(int_bits, frac_bits):
         e = len(int_bits) - 1
         m = int_bits[1:] + frac_bits
     else:
-        first_one = frac_bits.index(1)
+        if not any(frac_bits):
+            first_one = -1
+        else:
+            first_one = frac_bits.index(1)
         e = -(first_one + 1)
         m = frac_bits[first_one + 1:]
     
@@ -55,7 +58,7 @@ def from_ieee_to_float(bits):
     for i, bit in enumerate(m):
         m_value += bit * (2**(-i))       
 
-    return (1 - 2 * s) * m_value * 2**(e-127)
+    return (1 - 2 * s) * m_value * 2 ** (e-BIAS)
 
 def unpack(bits):
     sign = bits[0]
@@ -64,20 +67,19 @@ def unpack(bits):
 
     e_value = 0
     for i, bit in enumerate(reversed(e)):
-        e_value += bit * 2**(i)
+        e_value += bit * 2**i
 
     if e_value == 0 and not any(m):
         return sign, 0, [0] * (MANTISSA_SIZE+1)
 
-    #e_value -= 127
-
     return sign, e_value, [1] + m      
 
 def pack(s, e, m):
-    e = get_integer_bits(e)
+    e = get_integer_part_bits(e)
     if len(e) < EXPONENT_SIZE:
         e = [0]*(EXPONENT_SIZE-len(e)) + e
-    print(e)
+    if len(m) < MANTISSA_SIZE:
+        m += [0]*(MANTISSA_SIZE + 1 - len(m))
     return [s] + e + m[1:MANTISSA_SIZE+1]
 
 def from_bits_to_int(bits):
@@ -99,8 +101,13 @@ def add_ieee(a, b):
         s = s2
     if s1 == s2:
         m = add_mantissas(m1, m2)
+        if len(m) > len(m1):
+            e += 1
     else:
+        if m1 == m2 and e1 == e2:
+            return pack(0, 0, [])
         m = sub_mantissas(m1, m2)
+        
     m, e = normalize_mantissa(m, e)
     return pack(s, e, m)
 
@@ -140,7 +147,7 @@ def sub_mantissas(m1, m2):
             borrow = 0
         m.append(bit)
     m.reverse()
-    print(f"m = {m}")
+    #print(f"m = {m}")
     return m
     
 
@@ -158,8 +165,12 @@ def comp_ieee(a, b):
     s1, e1, m1 = unpack(a)
     s2, e2, m2 = unpack(b)
     s = (s1 + s2) % 2
-    e = e1 + e2 - 127
+    e = e1 + e2 - BIAS
     m = []
+
+    if not any(m1) or not any(m2):
+        return [s] + [0]*(SIZE-1)
+
 
     m1_reversed = m1[::-1]
     first_one = m1_reversed.index(1)
@@ -169,31 +180,22 @@ def comp_ieee(a, b):
         if m2[i] == 1:
             m1_cutted_with_shift = m1_cutted + [0]*i
             m = add_binary(m, m1_cutted_with_shift) 
-    print(m)
     return pack(s, e, m)
-    # print(m)
 
-    
 def add_binary(bin1, bin2):
     i, j = len(bin1) - 1, len(bin2) - 1
     carry = 0
     result = []
 
-    # Цикл пока есть цифры в обоих списках или остался перенос
     while i >= 0 or j >= 0 or carry:
-        # Получаем текущие цифры (0 если индекс вышел за границы)
         val1 = bin1[i] if i >= 0 else 0
         val2 = bin2[j] if j >= 0 else 0
 
-        # Сумма цифр и переноса
         total = val1 + val2 + carry
 
-        # Новая цифра результата (остаток от деления на 2)
-        # Используем математику вместо % для чистоты логики 0/1, хотя % допустим
-        new_digit = 1 if total == 1 or total == 3 else 0
+        new_digit = total % 2
         
-        # Новый перенос (если сумма >= 2)
-        carry = 1 if total >= 2 else 0
+        carry = total // 2
 
         result.append(new_digit)
 
@@ -206,13 +208,13 @@ def div_ieee(a, b):
     s1, e1, m1 = unpack(a)
     s2, e2, m2 = unpack(b)
     s = (s1 + s2) % 2
-    e = e1 - e2 + 127
+    e = e1 - e2 + BIAS
     
     if not any(m2):
         raise ValueError("Деление на ноль")
 
     if not any(m1):
-        return pack(0, 0, [0]*24)
+        return pack(0, 0, [0] * (MANTISSA_SIZE + 1))
     
     m1_reversed = m1[::-1]
     first_one = m1_reversed.index(1)
@@ -227,22 +229,17 @@ def div_ieee(a, b):
     print(m)
 
     return pack(s, e, m)
-    # print(m)
 
-def binary_division(dividend: list[int], divisor: list[int], steps: int = 24):
-    quotient = []  # Частное (результат)
-    remainder = [] # Текущий остаток
+def binary_division(dividend: list[int], divisor: list[int]):
+    quotient = []
+    remainder = []
     
     for bit in dividend:
-        # 1. "Сносим" следующий бит из делимого в остаток
         remainder.append(bit)
         
-        # Убираем ведущие нули в остатке для удобства сравнения
         while len(remainder) > 1 and remainder[0] == 0:
             remainder.pop(0)
-            
-        # 2. Сравниваем: помещается ли делитель в текущий остаток?
-        # (Функция сравнения списков по величине числа)
+
         if is_greater_or_equal(remainder, divisor):
             quotient.append(1)
             remainder = subtract_binary(remainder, divisor)
@@ -252,9 +249,7 @@ def binary_division(dividend: list[int], divisor: list[int], steps: int = 24):
     first_one = quotient.index(1)
     quotient = quotient[first_one:]
 
-    # 3. После того как биты делимого кончились, продолжаем делить "в дробь"
-    # Добавляем виртуальные нули (как запятую в столбике)
-    while len(quotient) != 24:
+    while len(quotient) != MANTISSA_SIZE + 1:
         remainder.append(0)
         while len(remainder) > 1 and remainder[0] == 0:
             remainder.pop(0)
@@ -268,17 +263,14 @@ def binary_division(dividend: list[int], divisor: list[int], steps: int = 24):
     return quotient
 
 def is_greater_or_equal(a, b):
-    # Сначала сравниваем длину (число без ведущих нулей)
     if len(a) > len(b): return True
     if len(a) < len(b): return False
-    # Если длины равны, сравниваем побитово
     for bit_a, bit_b in zip(a, b):
         if bit_a > bit_b: return True
         if bit_a < bit_b: return False
     return True
 
 def subtract_binary(a, b):
-    # Обычное вычитание столбиком (a - b)
     res = []
     a_copy = list(a)
     b_padded = [0] * (len(a) - len(b)) + b
@@ -287,7 +279,6 @@ def subtract_binary(a, b):
         if a_copy[i] >= b_padded[i]:
             res.insert(0, a_copy[i] - b_padded[i])
         else:
-            # Занимаем у соседа
             j = i - 1
             while a_copy[j] == 0:
                 a_copy[j] = 1
