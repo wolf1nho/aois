@@ -2,8 +2,8 @@ class ZhegalkinBuilder:
     def __init__(self):
         self.polynomial = []
 
-    def build(self, table, variables):
-        n = len(variables)
+    def build(self, table):
+        n = len(table.variables)
         m = len(table)
         column = []
         for row in table:
@@ -24,7 +24,7 @@ class ZhegalkinBuilder:
                 summand = []
                 for j in range(n): 
                     if table[i][j]:
-                        summand.append(variables[j])
+                        summand.append(table.variables[j])
                 if not summand:
                     self.polynomial.append("1")
                 else:

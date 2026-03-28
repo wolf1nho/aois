@@ -1,11 +1,9 @@
 class FictiveVariablesFinder:
-    def __init__(self):
-        pass
-
-    def find(self, table, variables):
+    @staticmethod
+    def find(table):
         step = len(table) // 2
         is_fictive = []
-        for j in range(len(variables)):
+        for j in range(len(table.variables)):
             fictive = True
             for k in range(0, len(table)-step, step*2):
                 for i in range(k, k + step):
@@ -20,9 +18,16 @@ class FictiveVariablesFinder:
                 is_fictive.append(0)
             step //= 2
         result = []
-        for i in range(len(variables)):
+        for i in range(len(table.variables)):
             if is_fictive[i]:
-                result.append(variables[i])
-        return result
+                result.append(table.variables[i])
+        
+        return FictiveVariablesFinder.to_str(result)
+        
+    @staticmethod
+    def to_str(variables):
+        if not variables:
+            return "отсутствуют"
+        return ", ".join(variables)
 
         

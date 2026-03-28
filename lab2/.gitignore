@@ -1,3 +1,11 @@
 __pycache__
 .vscode
 Derivatives.py
+pyproject.toml
+src/__pycache__
+src/Analyser.py
+.coverage
+uv.lock
+.python-version
+.venv
+.pytest_cache

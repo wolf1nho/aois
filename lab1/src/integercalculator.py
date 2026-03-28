@@ -151,7 +151,7 @@ def binary_div_with_fraction(dividend, divisor):
         while len(remainder) > 1 and remainder[0] == 0:
             remainder.pop(0)
 
-        if is_greater_or_equal(remainder, dividend):
+        if is_greater_or_equal(remainder, divisor):
             quotient.append(1)
             remainder = subtract_binary(remainder, divisor)
         else:

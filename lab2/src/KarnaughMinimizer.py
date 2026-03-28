@@ -1,32 +1,24 @@
 class KarnaughMinimizer:
     def __init__(self):
-        self.table = []
-        self.variables = []
         self.minimized_sdnf = ""
         self.minimized_sknf = ""
 
-    def minimize_sdnf(self, table, variables):
+    def minimize_sdnf(self, table):
         self.table = table
-        self.variables = variables
-        self.minimized_sdnf = self._minimize(table, variables, target_value=1, is_dnf=True)
+        self.minimized_sdnf = self._minimize(table.table, table.variables, target_value=1, is_dnf=True)
         return self.minimized_sdnf
 
-    def minimize_sknf(self, table, variables):
+    def minimize_sknf(self, table):
         self.table = table
-        self.variables = variables
-        self.minimized_sknf = self._minimize(table, variables, target_value=0, is_dnf=False)
+        self.minimized_sknf = self._minimize(table.table, table.variables, target_value=0, is_dnf=False)
         return self.minimized_sknf
 
-    def get_minimized_sdnf(self):
-        return self.minimized_sdnf
-
-    def get_minimized_sknf(self):
-        return self.minimized_sknf
-
-    def print_karnaugh_map(self, table, variables):
+    def print_karnaugh_map(self, table):
         if not table:
             print("\nКарта Карно: пустая таблица")
             return
+        
+        variables = table.variables 
 
         row_bits = len(variables) // 2
         col_bits = len(variables) - row_bits
@@ -158,10 +150,10 @@ class KarnaughMinimizer:
                 return "1" if is_dnf else "0"
 
             separator = " & " if is_dnf else " | "
-            if len(literals) == 1:
-                formatted.append(literals[0])
-            else:
-                formatted.append("(" + separator.join(literals) + ")")
+            # if len(literals) == 1:
+            #     formatted.append(literals[0])
+            # else:
+            formatted.append("(" + separator.join(literals) + ")")
 
         joiner = " | " if is_dnf else " & "
         return joiner.join(formatted)
