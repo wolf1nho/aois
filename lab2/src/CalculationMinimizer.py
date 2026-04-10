@@ -11,12 +11,15 @@ class CalculationMinimizer:
         print(f"Этап 1 ({form.upper()}): Исходные термы")
         self._print_terms(minimized_terms)
         
-        minimized_terms_new = []
+        minimized_terms_new = set()
         impossible_to_merge = False
         stage = 2
 
         while not impossible_to_merge:
             print(f"Этап {stage} ({form.upper()}): Склеивание")
+            minimized_terms_new = set()
+            used = set()
+            has_new = False
             for i in range(len(minimized_terms)):
                 for j in range(i+1, len(minimized_terms)):
                     index = -1
@@ -28,41 +31,29 @@ class CalculationMinimizer:
                                 index = -1
                                 break
                     if index != -1:
-                        minimized_terms_new.append(minimized_terms[i][:])
-                        minimized_terms_new[-1][index] = 2
-
-            if not minimized_terms_new:
+                        new_term_list = minimized_terms[i][:]
+                        new_term_list[index] = 2
+                        minimized_terms_new.add(tuple(new_term_list))
+                        used.add(tuple(minimized_terms[i]))
+                        used.add(tuple(minimized_terms[j]))
+                        has_new = True
+            for term in minimized_terms:
+                if tuple(term) not in used:
+                    minimized_terms_new.add(tuple(term))
+            
+            if not has_new:
                 impossible_to_merge = True
                 print("Склеивание завершено, новых термов нет.\n")
                 stage += 1
             else:
-                minimized_terms = minimized_terms_new[:]
-                minimized_terms_new = []
+                minimized_terms = [list(term) for term in minimized_terms_new]
+                minimized_terms_new = set()
                 self._print_terms(minimized_terms)
                 stage += 1
 
         if any(all(x == 2 for x in term) for term in minimized_terms):
             self._print_terms(minimized_terms)
             return minimized_terms
-
-        print(f"Этап {stage} ({form.upper()}): Удаление избыточных импликант")
-        i = 0
-        while i < len(minimized_terms):
-            count = 0
-            for k in range(len(minimized_terms[i])):
-                if minimized_terms[i][k] == 2:
-                    count += 1
-                    continue
-                for j in range(0, len(minimized_terms)):
-                    if j == i:
-                        continue
-                    if minimized_terms[i][k] == minimized_terms[j][k]:
-                        count += 1
-                        break
-            if count == len(minimized_terms[i]):
-                minimized_terms.pop(i)    
-            else:
-                i += 1
 
         self._print_terms(minimized_terms)
         return minimized_terms
