@@ -1,0 +1,18 @@
+[project]
+name = "lab4"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+addopts = [
+    "--strict-markers",
+    "--cov=src",
+    "--cov-report=term-missing"
+]
