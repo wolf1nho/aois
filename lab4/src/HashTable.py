@@ -78,9 +78,7 @@ class HashTable:
         if not base_node.U:
             self._write_node(h, key, value, c=True)
             return
-
-        # В базовой ячейке может лежать элемент, который относится к другой цепочке.
-        # Тогда его нужно перенести, иначе поиск от адреса h не найдет новый ключ.
+        
         if not base_node.C:
             free_idx = self._find_free_slot(h)
             if free_idx is None:
@@ -144,11 +142,11 @@ class HashTable:
 
         while True:
             if self.table[curr_idx].key == key:
-                self.table[curr_idx].value = value  # Ключ найден, обновляем значение
+                self.table[curr_idx].value = value
                 return
             
             if self.table[curr_idx].P0 is None:
-                raise Exception("Ключ не найден")  # Достигнут конец цепочки, ключ не найден
+                raise Exception("Ключ не найден")
             
             curr_idx = self.table[curr_idx].P0
 
@@ -157,23 +155,18 @@ class HashTable:
         curr_idx = h
         prev_idx = None
 
-        # 1. Ищем элемент в цепочке
         while curr_idx is not None:
             node = self.table[curr_idx]
             
-            # Если нашли ключ и он не был удален ранее
             if node.key == key and node.U:
-                # Сценарий А: Элемент терминальный (конец цепочки)
                 if node.P0 is None:
                     node.U = False
                     node.key = None
                     node.value = None
                     
-                    # Если был предыдущий элемент в цепочке, делаем его терминальным
                     if prev_idx is not None:
                         self.table[prev_idx].P0 = None
                         
-                # Сценарий Б: Элемент в середине цепочки
                 else:
                     next_node = self.table[node.P0]
                     node.key = next_node.key
@@ -186,7 +179,7 @@ class HashTable:
                 
                 return
             
-            if node.P0 is None: # Если дошли до конца цепочки и не нашли
+            if node.P0 is None:
                 break
 
             prev_idx = curr_idx
@@ -199,6 +192,5 @@ class HashTable:
             self._clear_node(i)
             
     def get_load_factor(self) -> float:
-        # Считаем только те ячейки, где флаг U (занято) равен True
         occupied_nodes = sum(1 for node in self.table if node.U)
         return occupied_nodes / self.size
